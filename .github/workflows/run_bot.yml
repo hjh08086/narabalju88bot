@@ -2,8 +2,8 @@ name: Narajangteo Bot
 
 on:
   schedule:
-    - cron: '*/10 * * * *'  # 10분마다 자동 실행 (원하면 '*/15' 등으로 수정 가능)
-  workflow_dispatch:      # 수동으로도 실행할 수 있게 설정
+    - cron: '*/10 * * * *'  # 10분마다 실행
+  workflow_dispatch:
 
 jobs:
   run-bot:
@@ -19,7 +19,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install requests beautifulsoup4
+          pip install requests
 
       - name: Run script
         env:
