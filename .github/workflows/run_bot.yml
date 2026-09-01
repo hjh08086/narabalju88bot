@@ -28,3 +28,9 @@ jobs:
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: |
           python bot.py
+
+      - name: Save sent_ids cache
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "Auto-update sent_ids.json"
+          file_pattern: "sent_ids.json"
