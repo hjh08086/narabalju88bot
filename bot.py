@@ -10,9 +10,25 @@ TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
 
 KEYWORDS = ["도시", "설계", "타당성", "계획"]
+CACHE_FILE = "sent_ids.json"
 
-# 이미 보낸 공고 저장 (중복 방지)
-sent_ids = set()
+# 이미 보낸 공고 기록 불러오기 (기억 유지용)
+def load_sent_ids():
+    if os.path.exists(CACHE_FILE):
+        try:
+            with open(CACHE_FILE, "r", encoding="utf-8") as f:
+                return set(json.load(f))
+        except:
+            return set()
+    return set()
+
+# 보낸 공고 기록 저장하기
+def save_sent_ids(sent_ids):
+    try:
+        with open(CACHE_FILE, "w", encoding="utf-8") as f:
+            json.dump(list(sent_ids), f, ensure_ascii=False)
+    except Exception as e:
+        print("기록 저장 오류:", e)
 
 def send_telegram(text):
     url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
@@ -29,16 +45,11 @@ def send_telegram(text):
 def fetch_order_plans():
     url = "https://apis.data.go.kr/1230000/ao/OrderPlanSttusService/getOrderPlanSttusListServcPPSSrch"
     
-    # 오늘 날짜를 YYYYMMDD 형태로 생성 (조회 기간 설정용)
-    today_str = datetime.now().strftime("%Y%m%d")
-    
     params = {
         "serviceKey": SERVICE_KEY,
         "pageNo": "1",
-        "numOfRows": "100",  # 누락 방지를 위해 100건으로 확대
+        "numOfRows": "300",
         "inqryDiv": "1",
-        "inqryBgnDt": today_str,  # 오늘 등록된 것부터 조회
-        "inqryEndDt": today_str,  # 오늘 등록된 것까지 조회
         "type": "json"
     }
     
@@ -61,28 +72,29 @@ def fetch_order_plans():
         return []
 
 def main_once():
-    print(f"\n[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] 발주계획 확인 중...")
+    print(f"\n[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] 실시간 발주계획 확인 중...")
     
+    sent_ids = load_sent_ids()
     items = fetch_order_plans()
-    print(f"조회된 건수: {len(items)}")
+    print(f"조회된 전체 건수: {len(items)}")
     
     new_count = 0
     
     for item in items:
         title = item.get("bizNm") or ""
         org = item.get("orderInsttNm") or "기관정보 없음"
-        div_name = item.get("bsnsDivNm") or ""  # 용역 구분
+        div_name = item.get("bsnsDivNm") or ""
         amount = item.get("sumOrderAmt") or ""
         year = item.get("orderYear") or ""
         month = item.get("orderMnth") or ""
         
-        # 고유 ID 만들기 (중복 방지용)
+        # 고유 ID 생성
         unique_id = f"{org}_{title}_{year}{month}"
         
         if not title or unique_id in sent_ids:
             continue
         
-        # 1. 기술용역만 필터
+        # 1. 기술용역 필터
         if "기술" not in div_name and "기술용역" not in title:
             if not any(kw in title for kw in ["설계", "타당성", "계획"]):
                 continue
@@ -92,8 +104,8 @@ def main_once():
         if not matched:
             continue
         
-        # 알림 전송
-        msg = f"""📋 <b>기술용역 발주계획 알림</b>
+        # 신규 공고 알림 전송
+        msg = f"""📋 <b>신규 기술용역 발주계획 알림</b>
 
 📌 <b>{title}</b>
 🏛 발주기관: {org}
@@ -105,11 +117,14 @@ def main_once():
         send_telegram(msg)
         sent_ids.add(unique_id)
         new_count += 1
-        print("→ 알림 전송:", title)
+        print("→ 신규 알림 전송:", title)
         time.sleep(1)
     
+    # 기억한 목록을 파일에 다시 저장
+    save_sent_ids(sent_ids)
+    
     if new_count == 0:
-        print("새로운 기술용역 공고 없음")
+        print("새로운 공고 없음 (정상 대기 중)")
     else:
         print(f"신규 알림 {new_count}건 전송 완료")
 
