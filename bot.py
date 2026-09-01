@@ -29,11 +29,16 @@ def send_telegram(text):
 def fetch_order_plans():
     url = "https://apis.data.go.kr/1230000/ao/OrderPlanSttusService/getOrderPlanSttusListServcPPSSrch"
     
+    # 오늘 날짜를 YYYYMMDD 형태로 생성 (조회 기간 설정용)
+    today_str = datetime.now().strftime("%Y%m%d")
+    
     params = {
         "serviceKey": SERVICE_KEY,
         "pageNo": "1",
-        "numOfRows": "50",
+        "numOfRows": "100",  # 누락 방지를 위해 100건으로 확대
         "inqryDiv": "1",
+        "inqryBgnDt": today_str,  # 오늘 등록된 것부터 조회
+        "inqryEndDt": today_str,  # 오늘 등록된 것까지 조회
         "type": "json"
     }
     
