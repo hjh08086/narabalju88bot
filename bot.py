@@ -4,14 +4,12 @@ import json
 import time
 from datetime import datetime
 
-# ========== 여기 세 곳만 수정 ==========
+# ========== 설정 ==========
 SERVICE_KEY = os.environ.get("SERVICE_KEY")
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
-# =====================================
 
 KEYWORDS = ["도시", "설계", "타당성", "계획"]
-CHECK_INTERVAL = 300  # 5분 (초 단위)
 
 # 이미 보낸 공고 저장 (중복 방지)
 sent_ids = set()
@@ -68,7 +66,7 @@ def main_once():
     for item in items:
         title = item.get("bizNm") or ""
         org = item.get("orderInsttNm") or "기관정보 없음"
-        div_name = item.get("bsnsDivNm") or ""  # 용역 구분 (일반용역, 기술용역 등)
+        div_name = item.get("bsnsDivNm") or ""  # 용역 구분
         amount = item.get("sumOrderAmt") or ""
         year = item.get("orderYear") or ""
         month = item.get("orderMnth") or ""
@@ -81,7 +79,6 @@ def main_once():
         
         # 1. 기술용역만 필터
         if "기술" not in div_name and "기술용역" not in title:
-            # 제목에 설계/타당성 등이 있으면 기술용역으로 간주
             if not any(kw in title for kw in ["설계", "타당성", "계획"]):
                 continue
         
@@ -111,17 +108,5 @@ def main_once():
     else:
         print(f"신규 알림 {new_count}건 전송 완료")
 
-# ===== 5분마다 반복 실행 =====
-print("🚀 나라장터 기술용역 발주계획 모니터링 시작")
-print("5분마다 자동 확인합니다. (멈추려면 앱을 종료하세요)")
-
-send_telegram("🚀 나라장터 기술용역 발주계획 모니터링이 시작되었습니다.")
-
-while True:
-    try:
-        main_once()
-    except Exception as e:
-        print("실행 중 오류:", e)
-    
-    print(f"{CHECK_INTERVAL}초 후 다시 확인합니다...\n")
-    time.sleep(CHECK_INTERVAL)
+if __name__ == "__main__":
+    main_once()
