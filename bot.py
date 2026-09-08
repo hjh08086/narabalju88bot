@@ -9,7 +9,7 @@ SERVICE_KEY = os.environ.get("SERVICE_KEY")
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
 
-KEYWORDS = ["도시", "설계", "타당성", "개발", "계획"]
+KEYWORDS = ["도시", "설계", "타당성", "개발", "조성", "계획"]
 CACHE_FILE = "sent_ids.json"
 
 # 이미 보낸 공고 기록 불러오기 (기억 유지용)
