@@ -118,7 +118,7 @@ def main_once():
         sent_ids.add(unique_id)
         new_count += 1
         print("→ 신규 알림 전송:", title)
-        time.sleep(1)
+        time.sleep(3)
     
     # 기억한 목록을 파일에 다시 저장
     save_sent_ids(sent_ids)
