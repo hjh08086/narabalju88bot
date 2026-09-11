@@ -6,8 +6,8 @@ from datetime import datetime
 
 # ========== 설정 (사전규격 전용 시크릿 연결) ==========
 SERVICE_KEY = os.environ.get("SERVICE_KEY")
-TELEGRAM_TOKEN = os.environ.get("SAJUN_TELEGRAM_TOKEN")
-TELEGRAM_CHAT_ID = os.environ.get("SAJUN_CHAT_ID")
+TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")
+TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
 
 KEYWORDS = ["도시", "설계", "타당성", "개발", "조성", "계획"]
 CACHE_FILE = "sent_sajun_ids.json"
@@ -45,12 +45,18 @@ def send_telegram(text):
 def fetch_sajun_plans():
     url = "https://apis.data.go.kr/1230000/ad/PrdlstPrtcndSpceInfoService/getPrdlstPrtcndSpceList"
     
-    # 발주계획 봇처럼 날짜 파라미터를 아예 빼고 기본 파라미터만 사용
+    # 400 에러 및 타임아웃 방지를 위해 오늘 하루 기준 날짜 필수 파라미터 적용
+    today_str = datetime.now().strftime('%Y%m%d')
+    bgn_dt = today_str + "0000"
+    end_dt = today_str + "2359"
+    
     params = {
         "serviceKey": SERVICE_KEY,
         "pageNo": "1",
         "numOfRows": "100",
-        "type": "json"
+        "type": "json",
+        "inqryBgnDt": bgn_dt,
+        "inqryEndDt": end_dt
     }
     
     try:
@@ -81,19 +87,22 @@ def main_once():
     new_count = 0
     
     for item in items:
-        # 사전규격 API 응답 필드명에 맞춘 데이터 추출
         title = item.get("bidNtceNm") or ""
         org = item.get("ntceInsttNm") or "기관정보 없음"
         bid_no = item.get("bidNtceNo", "")
         bid_ord = item.get("bidNtceOrd", "")
         
-        # 고유 ID 생성 (발주계획과 겹치지 않게 분리)
+        # 고유 ID 생성
         unique_id = f"{bid_no}_{bid_ord}"
         
         if not bid_no or unique_id in sent_ids:
             continue
         
-        # 키워드 필터
+        # 기술용역 및 키워드 필터링 (발주계획 봇 기준과 동일하게 맞춤)
+        if "기술" not in title and "용역" not in title:
+            if not any(kw in title for kw in ["설계", "타당성", "계획"]):
+                continue
+        
         matched = [kw for kw in KEYWORDS if kw in title]
         if not matched:
             continue
@@ -111,7 +120,6 @@ def main_once():
         print("→ 신규 알림 전송:", title)
         time.sleep(3)
     
-    # 기억한 목록을 파일에 다시 저장
     save_sent_ids(sent_ids)
     
     if new_count == 0:
