@@ -1,6 +1,7 @@
 import os
 import time
 import requests
+from datetime import datetime 
 
 # ========== 1. 설정 정보 (사전규격 전용 시크릿 연결) ==========
 SERVICE_KEY = os.environ.get("SERVICE_KEY")
@@ -41,7 +42,8 @@ def send_telegram(message):
         print(f"텔레그램 전송 실패: {e}")
 
 def main():
-    print(f"[{time.strftime('%Y-%m-%d %H:%M:%S']}] 실시간 사전규격 확인 중...")
+    current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    print(f"[{current_time}] 실시간 사전규격 확인 중...")
     
     # 나라장터 사전규격 API 주소 (공공데이터포털)
     url = "https://apis.data.go.kr/1230000/ad/PrdlstPrtcndSpceInfoService/getPrdlstPrtcndSpceList"
