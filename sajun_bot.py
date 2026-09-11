@@ -45,18 +45,12 @@ def send_telegram(text):
 def fetch_sajun_plans():
     url = "https://apis.data.go.kr/1230000/ad/PrdlstPrtcndSpceInfoService/getPrdlstPrtcndSpceList"
     
-    # 400 에러 및 타임아웃 방지를 위해 오늘 하루 기준 날짜 필수 파라미터 적용
-    today_str = datetime.now().strftime('%Y%m%d')
-    bgn_dt = today_str + "0000"
-    end_dt = today_str + "2359"
-    
+    # 날짜 파라미터를 완전히 제거하여 400 에러 방지 (발주계획 봇과 동일한 방식)
     params = {
         "serviceKey": SERVICE_KEY,
         "pageNo": "1",
         "numOfRows": "100",
-        "type": "json",
-        "inqryBgnDt": bgn_dt,
-        "inqryEndDt": end_dt
+        "type": "json"
     }
     
     try:
@@ -98,7 +92,7 @@ def main_once():
         if not bid_no or unique_id in sent_ids:
             continue
         
-        # 기술용역 및 키워드 필터링 (발주계획 봇 기준과 동일하게 맞춤)
+        # 기술용역 및 키워드 필터링
         if "기술" not in title and "용역" not in title:
             if not any(kw in title for kw in ["설계", "타당성", "계획"]):
                 continue
