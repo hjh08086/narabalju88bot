@@ -45,19 +45,12 @@ def send_telegram(text):
 def fetch_sajun_plans():
     url = "https://apis.data.go.kr/1230000/ad/PrdlstPrtcndSpceInfoService/getPrdlstPrtcndSpceList"
     
-    # 오늘 기준 최근 3일 치 날짜 자동 계산 (YYYYMMDD0000 / YYYYMMDD2359 형식)
-    from datetime import timedelta
-    today = datetime.now()
-    bgn_dt = (today - timedelta(days=3)).strftime('%Y%m%d0000')
-    end_dt = today.strftime('%Y%m%d2359')
-    
+    # 발주계획 봇처럼 날짜 파라미터를 아예 빼고 기본 파라미터만 사용
     params = {
         "serviceKey": SERVICE_KEY,
         "pageNo": "1",
-        "numOfRows": "300",
-        "type": "json",
-        "inqryBgnDt": bgn_dt,  # 필수 조회 시작일시
-        "inqryEndDt": end_dt   # 필수 조회 종료일시
+        "numOfRows": "100",
+        "type": "json"
     }
     
     try:
