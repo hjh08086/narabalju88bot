@@ -43,18 +43,15 @@ def send_telegram(text):
         print("텔레그램 오류:", e)
 
 def fetch_sajun_plans():
-    url = "https://apis.data.go.kr/1230000/ad/PrdlstPrtcndSpceInfoService/getPrdlstPrtcndSpceList"
+    # 조달청 공식 사전규격 서비스 엔드포인트 (HrcspSsstndrdInfoService) 적용
+    url = "https://apis.data.go.kr/1230000/ao/HrcspSsstndrdInfoService/getPublicPrcureThngInfoServc"
     
-    # 사전규격 API 특성상 최소한의 날짜 파라미터(오늘)는 필수이므로 발주계획 구조 안에서 이 부분만 반영
-    today_str = datetime.now().strftime('%Y%m%d')
-    
+    # 400 에러 원인인 날짜 파라미터를 완전히 제거하고 기본 파라미터만 구성
     params = {
         "serviceKey": SERVICE_KEY,
         "pageNo": "1",
-        "numOfRows": "300",
-        "type": "json",
-        "inqryBgnDt": today_str,
-        "inqryEndDt": today_str
+        "numOfRows": "100",
+        "type": "json"
     }
     
     try:
@@ -91,10 +88,11 @@ def main_once():
     new_count = 0
     
     for item in items:
-        title = item.get("bidNtceNm") or ""
-        org = item.get("ntceInsttNm") or "기관정보 없음"
-        bid_no = item.get("bidNtceNo", "")
-        bid_ord = item.get("bidNtceOrd", "")
+        # 사전규격 API 필드명 매핑 (공고명, 기관명, 공고번호, 차수)
+        title = item.get("bidNtceNm") or item.get("bfSpecRgstNoNm") or ""
+        org = item.get("orderInsttNm") or item.get("ntceInsttNm") or "기관정보 없음"
+        bid_no = item.get("bfSpecRgstNo") or item.get("bidNtceNo", "")
+        bid_ord = item.get("bidNtceOrd", "1")
         
         # 고유 ID 생성
         unique_id = f"{bid_no}_{bid_ord}"
