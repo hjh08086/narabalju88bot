@@ -43,19 +43,18 @@ def send_telegram(text):
         print("텔레그램 오류:", e)
 
 def fetch_sajun_plans():
-    # 조달청 공식 사전규격 서비스 엔드포인트 (HrcspSsstndrdInfoService) 적용
     url = "https://apis.data.go.kr/1230000/ao/HrcspSsstndrdInfoService/getPublicPrcureThngInfoServc"
     
-    # 400 에러 원인인 날짜 파라미터를 완전히 제거하고 기본 파라미터만 구성
     params = {
         "serviceKey": SERVICE_KEY,
         "pageNo": "1",
-        "numOfRows": "100",
+        "numOfRows": "50",  # 100건에서 50건으로 줄여서 서버 부담 완화
         "type": "json"
     }
     
     try:
-        res = requests.get(url, params=params, timeout=30)
+        # 타임아웃을 30초에서 50초로 넉넉하게 증가
+        res = requests.get(url, params=params, timeout=50)
         if res.status_code != 200:
             print("API 오류 상태코드:", res.status_code)
             return []
@@ -64,7 +63,6 @@ def fetch_sajun_plans():
         body = data.get("response", {}).get("body", {})
         items_data = body.get("items", [])
         
-        # 사전규격 API 고유의 items > item 구조 대응
         if isinstance(items_data, dict):
             items = items_data.get("item", [])
         else:
