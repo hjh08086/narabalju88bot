@@ -4,7 +4,7 @@ import json
 import time
 from datetime import datetime
 
-# ========== 설정 (사전규격 전용 시크릿 연결) ==========
+# ========== 설정 ==========
 SERVICE_KEY = os.environ.get("SERVICE_KEY")
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
@@ -45,12 +45,16 @@ def send_telegram(text):
 def fetch_sajun_plans():
     url = "https://apis.data.go.kr/1230000/ad/PrdlstPrtcndSpceInfoService/getPrdlstPrtcndSpceList"
     
-    # 날짜 파라미터를 완전히 제거하여 400 에러 방지 (발주계획 봇과 동일한 방식)
+    # 사전규격 API 특성상 최소한의 날짜 파라미터(오늘)는 필수이므로 발주계획 구조 안에서 이 부분만 반영
+    today_str = datetime.now().strftime('%Y%m%d')
+    
     params = {
         "serviceKey": SERVICE_KEY,
         "pageNo": "1",
-        "numOfRows": "100",
-        "type": "json"
+        "numOfRows": "300",
+        "type": "json",
+        "inqryBgnDt": today_str,
+        "inqryEndDt": today_str
     }
     
     try:
@@ -61,8 +65,14 @@ def fetch_sajun_plans():
         
         data = res.json()
         body = data.get("response", {}).get("body", {})
-        items = body.get("items", [])
+        items_data = body.get("items", [])
         
+        # 사전규격 API 고유의 items > item 구조 대응
+        if isinstance(items_data, dict):
+            items = items_data.get("item", [])
+        else:
+            items = items_data
+            
         if not isinstance(items, list):
             items = [items] if items else []
             
@@ -92,16 +102,17 @@ def main_once():
         if not bid_no or unique_id in sent_ids:
             continue
         
-        # 기술용역 및 키워드 필터링
+        # 기술용역 필터 (발주계획 봇과 동일한 조건)
         if "기술" not in title and "용역" not in title:
             if not any(kw in title for kw in ["설계", "타당성", "계획"]):
                 continue
         
+        # 키워드 필터
         matched = [kw for kw in KEYWORDS if kw in title]
         if not matched:
             continue
         
-        # 신규 사전규격 공고 알림 전송
+        # 신규 공고 알림 전송
         msg = f"""🔍 <b>신규 사전규격 알림</b>
 
 📌 <b>{title}</b>
@@ -114,12 +125,13 @@ def main_once():
         print("→ 신규 알림 전송:", title)
         time.sleep(3)
     
+    # 기억한 목록을 파일에 다시 저장
     save_sent_ids(sent_ids)
     
     if new_count == 0:
-        print("새로운 사전규격 공고 없음 (정상 대기 중)")
+        print("새로운 공고 없음 (정상 대기 중)")
     else:
-        print(f"신규 사전규격 알림 {new_count}건 전송 완료")
+        print(f"신규 알림 {new_count}건 전송 완료")
 
 if __name__ == "__main__":
     main_once()
