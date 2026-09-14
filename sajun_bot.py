@@ -43,6 +43,7 @@ def send_telegram(text):
         print("텔레그램 오류:", e)
 
 def fetch_sajun_plans():
+    # 공공데이터포털 상세 화면에 명시된 정확한 오피셜 엔드포인트 적용
     base_url = "https://apis.data.go.kr/1230000/ao/HrcspSsstndrdInfoService/getPublicPrcureThngInfoServc"
     
     today = datetime.now()
@@ -51,33 +52,37 @@ def fetch_sajun_plans():
     
     url = f"{base_url}?serviceKey={SERVICE_KEY}&pageNo=1&numOfRows=500&type=json&inqryBgnDt={bgn_dt}&inqryEndDt={end_dt}&inqryDiv=1"
     
-    try:
-        res = requests.get(url, timeout=30)
-        print(f"HTTP 상태 코드: {res.status_code}")
-        
-        if res.status_code != 200:
-            print("API 응답 본문:", res.text[:300])
-            return []
+    for attempt in range(3):
+        try:
+            print(f"API 요청 시도 {attempt + 1}/3...")
+            res = requests.get(url, timeout=60)
+            print(f"HTTP 상태 코드: {res.status_code}")
             
-        data = res.json()
-        response_root = data.get("response", {})
+            if res.status_code == 200:
+                data = res.json()
+                response_root = data.get("response", {})
+                
+                body = response_root.get("body", {})
+                items_data = body.get("items", [])
+                
+                if isinstance(items_data, dict):
+                    items = items_data.get("item", [])
+                else:
+                    items = items_data
+                    
+                if not isinstance(items, list):
+                    items = [items] if items else []
+                    
+                return items
+            else:
+                print(f"API 오류 상태코드: {res.status_code}")
+        except Exception as e:
+            print(f"시도 {attempt + 1} 실패 (타임아웃 또는 통신 오류): {e}")
         
-        # 바디와 아이템 영역 유연하게 추출
-        body = response_root.get("body", {})
-        items_data = body.get("items", [])
+        time.sleep(5)
         
-        if isinstance(items_data, dict):
-            items = items_data.get("item", [])
-        else:
-            items = items_data
-            
-        if not isinstance(items, list):
-            items = [items] if items else []
-            
-        return items
-    except Exception as e:
-        print("API 호출 예외 발생:", e)
-        return []
+    print("API 서버 응답 없음 (연속 타임아웃 발생)")
+    return []
 
 def main_once():
     print(f"\n[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] 실시간 사전규격 확인 중...")
