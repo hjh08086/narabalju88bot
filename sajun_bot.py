@@ -45,7 +45,8 @@ def send_telegram(text):
 def fetch_sajun_plans():
     url = "https://apis.data.go.kr/1230000/ao/HrcspSsstndrdInfoService/getPublicPrcureThngInfoServc"
     
-    today_str = datetime.now().strftime('%Y%m%d')
+# today_str = datetime.now().strftime('%Y%m%d') 대신에
+    target_date = "20260911" # 지난 금요일 날짜로 강제 지정
     
     params = {
         "serviceKey": SERVICE_KEY,
@@ -53,8 +54,8 @@ def fetch_sajun_plans():
         "numOfRows": "300",
         "inqryDiv": "1",
         "type": "json",
-        "inqryBgnDt": today_str,
-        "inqryEndDt": today_str
+        "inqryBgnDt": target_date,
+        "inqryEndDt": target_date
     }
     
     for attempt in range(3):
