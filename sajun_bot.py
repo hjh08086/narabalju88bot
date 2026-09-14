@@ -43,13 +43,14 @@ def send_telegram(text):
         print("텔레그램 오류:", e)
 
 def fetch_sajun_plans():
-    base_url = "https://apis.data.go.kr/1230000/HrcspSsstndrdInfoService/getPublicPrcureThngInfoServc"
+    # 나라장터 사전규격 서비스 표준 엔드포인트 재정비
+    base_url = "https://apis.data.go.kr/1230000/ao/HrcspSsstndrdInfoService/getPublicPrcureThngInfoServc"
     
     today = datetime.now()
     bgn_dt = (today - timedelta(days=7)).strftime('%Y%m%d')
     end_dt = today.strftime('%Y%m%d')
     
-    # requests의 자동 인코딩 장난질을 막기 위해 serviceKey를 URL에 직접 결합
+    # URL 직접 결합으로 인코딩 변형 방지
     url = f"{base_url}?serviceKey={SERVICE_KEY}&pageNo=1&numOfRows=500&type=json&inqryBgnDt={bgn_dt}&inqryEndDt={end_dt}&inqryDiv=1"
     
     try:
