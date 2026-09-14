@@ -43,14 +43,12 @@ def send_telegram(text):
         print("텔레그램 오류:", e)
 
 def fetch_sajun_plans():
-    # 나라장터 사전규격 서비스 표준 엔드포인트 재정비
     base_url = "https://apis.data.go.kr/1230000/ao/HrcspSsstndrdInfoService/getPublicPrcureThngInfoServc"
     
     today = datetime.now()
     bgn_dt = (today - timedelta(days=7)).strftime('%Y%m%d')
     end_dt = today.strftime('%Y%m%d')
     
-    # URL 직접 결합으로 인코딩 변형 방지
     url = f"{base_url}?serviceKey={SERVICE_KEY}&pageNo=1&numOfRows=500&type=json&inqryBgnDt={bgn_dt}&inqryEndDt={end_dt}&inqryDiv=1"
     
     try:
@@ -64,15 +62,7 @@ def fetch_sajun_plans():
         data = res.json()
         response_root = data.get("response", {})
         
-        header = response_root.get("header", {})
-        result_code = header.get("resultCode")
-        result_msg = header.get("resultMsg")
-        print(f"API 결과 코드: {result_code} ({result_msg})")
-        
-        if result_code != "00" and result_code is not None:
-            print(f"API 서버 에러 발생: {result_msg}")
-            return []
-            
+        # 바디와 아이템 영역 유연하게 추출
         body = response_root.get("body", {})
         items_data = body.get("items", [])
         
