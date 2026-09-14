@@ -106,7 +106,7 @@ def main_once():
     
     new_count = 0
     
-    for item in items:
+  for item in items:
         title = item.get("bidNtceNm") or item.get("bfSpecRgstNoNm") or item.get("prcurePrnmntNoNm") or ""
         org = item.get("orderInsttNm") or item.get("ntceInsttNm") or item.get("dminsttNm") or "기관정보 없음"
         bid_no = item.get("bfSpecRgstNo") or item.get("bidNtceNo", "")
@@ -115,6 +115,9 @@ def main_once():
         # 고유 ID 생성
         unique_id = f"{bid_no}_{bid_ord}"
         
+        # 디버깅용: 수집된 공고 제목 확인
+        print(f"체크 중: {title}")
+
         if not title or unique_id in sent_ids:
             continue
         
@@ -126,7 +129,10 @@ def main_once():
         # 2. 키워드 필터
         matched = [kw for kw in KEYWORDS if kw in title]
         if not matched:
+            print(f" → 키워드 불일치로 제외됨")
             continue
+            
+        print(f" → 조건 일치! 알림 대상: {title}")
         
         # 신규 공고 알림 전송
         msg = f"""🔍 <b>신규 기술용역 사전규격 알림</b>
