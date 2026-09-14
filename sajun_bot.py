@@ -46,8 +46,9 @@ def fetch_sajun_plans():
     base_url = "https://apis.data.go.kr/1230000/ao/HrcspSsstndrdInfoService/getPublicPrcureThngInfoServcPPSSrch"
     
     today = datetime.now()
-    bgn_dt = (today - timedelta(days=7)).strftime('%Y%m%d')
-    end_dt = today.strftime('%Y%m%d')
+    # PPSSrch API 규격: YYYYMMDDHHMM (12자리 필수)
+    bgn_dt = (today - timedelta(days=7)).strftime('%Y%m%d0000')
+    end_dt = today.strftime('%Y%m%d2359')
     
     url = f"{base_url}?serviceKey={SERVICE_KEY}&pageNo=1&numOfRows=500&type=json&inqryBgnDt={bgn_dt}&inqryEndDt={end_dt}&inqryDiv=1"
     
@@ -60,12 +61,14 @@ def fetch_sajun_plans():
             if res.status_code == 200:
                 data = res.json()
                 response_root = data.get("response", {})
-                
                 body = response_root.get("body", {})
                 
-                # 서버가 반환한 전체 통계 정보 출력
-                total_count = body.get("totalCount", "정보 없음")
+                total_count = body.get("totalCount")
                 print(f"API 응답 전체 검색 건수(totalCount): {total_count}")
+                
+                # totalCount가 안 잡힐 경우 응답 데이터의 키 구조 확인용 출력
+                if total_count is None:
+                    print("응답 메타 확인:", json.dumps(data, ensure_ascii=False)[:300])
                 
                 items_data = body.get("items", [])
                 
