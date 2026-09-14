@@ -61,12 +61,26 @@ def fetch_sajun_plans():
     
     try:
         res = requests.get(url, params=params, timeout=30)
+        print(f"HTTP 상태 코드: {res.status_code}")
+        
         if res.status_code != 200:
-            print("API 오류 상태코드:", res.status_code)
+            print("API 응답 본문:", res.text[:300])
             return []
             
         data = res.json()
-        body = data.get("response", {}).get("body", {})
+        response_root = data.get("response", {})
+        
+        # API 서버가 보내준 결과 코드 확인
+        header = response_root.get("header", {})
+        result_code = header.get("resultCode")
+        result_msg = header.get("resultMsg")
+        print(f"API 결과 코드: {result_code} ({result_msg})")
+        
+        if result_code != "00":
+            print("API 서버 에러 발생!")
+            return []
+            
+        body = response_root.get("body", {})
         items_data = body.get("items", [])
         
         if isinstance(items_data, dict):
@@ -79,7 +93,7 @@ def fetch_sajun_plans():
             
         return items
     except Exception as e:
-        print("API 호출 오류:", e)
+        print("API 호출 예외 발생:", e)
         return []
 
 def main_once():
