@@ -43,8 +43,8 @@ def send_telegram(text):
         print("텔레그램 오류:", e)
 
 def fetch_sajun_plans():
-    # 공공데이터포털 상세 화면에 명시된 정확한 오피셜 엔드포인트 적용
-    base_url = "https://apis.data.go.kr/1230000/ao/HrcspSsstndrdInfoService/getPublicPrcureThngInfoServc"
+    # 발주계획처럼 PPSSrch가 붙는 정확한 오피셜 나라장터 검색 엔드포인트 적용
+    base_url = "https://apis.data.go.kr/1230000/ao/HrcspSsstndrdInfoService/getPublicPrcureThngInfoServcPPSSrch"
     
     today = datetime.now()
     bgn_dt = (today - timedelta(days=7)).strftime('%Y%m%d')
