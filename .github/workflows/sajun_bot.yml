@@ -21,9 +21,9 @@ jobs:
         run: |
           pip install requests
 
-      - name: Run script
+- name: Run script
         env:
-          SERVICE_KEY: ${{ secrets.SERVICE_KEY }}
+          SERVICE_KEY: ${{ secrets.SAJUN_SERVICE_KEY }}
           TELEGRAM_TOKEN: ${{ secrets.SAJUN_TELEGRAM_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.SAJUN_CHAT_ID }}
         run: |
