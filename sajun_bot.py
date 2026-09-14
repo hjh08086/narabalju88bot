@@ -12,7 +12,6 @@ TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
 KEYWORDS = ["도시", "설계", "타당성", "개발", "조성", "계획"]
 CACHE_FILE = "sent_sajun_ids.json"
 
-# 이미 보낸 공고 기록 불러오기 (기억 유지용)
 def load_sent_ids():
     if os.path.exists(CACHE_FILE):
         try:
@@ -22,7 +21,6 @@ def load_sent_ids():
             return set()
     return set()
 
-# 보낸 공고 기록 저장하기
 def save_sent_ids(sent_ids):
     try:
         with open(CACHE_FILE, "w", encoding="utf-8") as f:
@@ -46,12 +44,13 @@ def fetch_sajun_plans():
     base_url = "https://apis.data.go.kr/1230000/ao/HrcspSsstndrdInfoService/getPublicPrcureThngInfoServcPPSSrch"
     
     today = datetime.now()
-    # PPSSrch API 규격: YYYYMMDDHHMM (12자리 필수)
-    bgn_dt = (today - timedelta(days=7)).strftime('%Y%m%d0000')
+    # 서버 부하를 줄이기 위해 조회 기간을 최근 3일로 단축 (12자리 필수)
+    bgn_dt = (today - timedelta(days=3)).strftime('%Y%m%d0000')
     end_dt = today.strftime('%Y%m%d2359')
     
     url = f"{base_url}?serviceKey={SERVICE_KEY}&pageNo=1&numOfRows=500&type=json&inqryBgnDt={bgn_dt}&inqryEndDt={end_dt}&inqryDiv=1"
     
+    # 3번까지 재시도, 대기 시간 10초로 연장
     for attempt in range(3):
         try:
             print(f"API 요청 시도 {attempt + 1}/3...")
@@ -65,10 +64,6 @@ def fetch_sajun_plans():
                 
                 total_count = body.get("totalCount")
                 print(f"API 응답 전체 검색 건수(totalCount): {total_count}")
-                
-                # totalCount가 안 잡힐 경우 응답 데이터의 키 구조 확인용 출력
-                if total_count is None:
-                    print("응답 메타 확인:", json.dumps(data, ensure_ascii=False)[:300])
                 
                 items_data = body.get("items", [])
                 
@@ -86,7 +81,7 @@ def fetch_sajun_plans():
         except Exception as e:
             print(f"시도 {attempt + 1} 실패 (타임아웃 또는 통신 오류): {e}")
         
-        time.sleep(5)
+        time.sleep(10)
         
     print("API 서버 응답 없음 (연속 타임아웃 발생)")
     return []
@@ -106,23 +101,19 @@ def main_once():
         bid_no = item.get("bfSpecRgstNo") or item.get("bidNtceNo", "")
         bid_ord = item.get("bidNtceOrd", "1")
         
-        # 고유 ID 생성
         unique_id = f"{bid_no}_{bid_ord}"
         
         if not title or unique_id in sent_ids:
             continue
         
-        # 1. 기술용역 필터
         if "기술" not in title and "용역" not in title:
             if not any(kw in title for kw in ["설계", "타당성", "계획"]):
                 continue
         
-        # 2. 키워드 필터
         matched = [kw for kw in KEYWORDS if kw in title]
         if not matched:
             continue
         
-        # 신규 공고 알림 전송
         msg = f"""🔍 <b>신규 기술용역 사전규격 알림</b>
 
 📌 <b>{title}</b>
@@ -135,7 +126,6 @@ def main_once():
         print("→ 신규 알림 전송:", title)
         time.sleep(3)
     
-    # 기억한 목록을 파일에 다시 저장
     save_sent_ids(sent_ids)
     
     if new_count == 0:
