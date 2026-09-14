@@ -6,8 +6,8 @@ from datetime import datetime, timedelta
 
 # ========== 설정 (사전규격 전용) ==========
 SERVICE_KEY = os.environ.get("SERVICE_KEY")
-TELEGRAM_TOKEN = os.environ.get("SAJUN_TELEGRAM_TOKEN")
-TELEGRAM_CHAT_ID = os.environ.get("SAJUN_CHAT_ID")
+TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")
+TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
 
 KEYWORDS = ["도시", "설계", "타당성", "개발", "조성", "계획"]
 CACHE_FILE = "sent_sajun_ids.json"
@@ -46,11 +46,9 @@ def fetch_sajun_plans():
     base_url = "https://apis.data.go.kr/1230000/ao/HrcspSsstndrdInfoService/getPublicPrcureThngInfoServcPPSSrch"
     
     today = datetime.now()
-    # 서버 부하를 줄이기 위해 최근 3일치 조회 (12자리 필수)
     bgn_dt = (today - timedelta(days=3)).strftime('%Y%m%d0000')
     end_dt = today.strftime('%Y%m%d2359')
     
-    # requests의 params 기능으로 인코딩 충돌 방지
     params = {
         'serviceKey': SERVICE_KEY,
         'pageNo': '1',
@@ -106,13 +104,12 @@ def main_once():
     
     new_count = 0
     
-  for item in items:
+    for item in items:
         title = item.get("bidNtceNm") or item.get("bfSpecRgstNoNm") or item.get("prcurePrnmntNoNm") or ""
         org = item.get("orderInsttNm") or item.get("ntceInsttNm") or item.get("dminsttNm") or "기관정보 없음"
         bid_no = item.get("bfSpecRgstNo") or item.get("bidNtceNo", "")
         bid_ord = item.get("bidNtceOrd", "1")
         
-        # 고유 ID 생성
         unique_id = f"{bid_no}_{bid_ord}"
         
         # 디버깅용: 수집된 공고 제목 확인
@@ -129,7 +126,7 @@ def main_once():
         # 2. 키워드 필터
         matched = [kw for kw in KEYWORDS if kw in title]
         if not matched:
-            print(f" → 키워드 불일치로 제외됨")
+            print(" → 키워드 불일치로 제외됨")
             continue
             
         print(f" → 조건 일치! 알림 대상: {title}")
@@ -144,10 +141,8 @@ def main_once():
         send_telegram(msg)
         sent_ids.add(unique_id)
         new_count += 1
-        print("→ 신규 알림 전송:", title)
         time.sleep(3)
     
-    # 기억한 목록을 파일에 다시 저장
     save_sent_ids(sent_ids)
     
     if new_count == 0:
