@@ -5,7 +5,7 @@ import time
 from datetime import datetime, timedelta
 
 # ========== 설정 (사전규격 전용) ==========
-SERVICE_KEY = os.environ.get("SAJUN_SERVICE_KEY")
+SERVICE_KEY = os.environ.get("SERVICE_KEY")
 TELEGRAM_TOKEN = os.environ.get("SAJUN_TELEGRAM_TOKEN")
 TELEGRAM_CHAT_ID = os.environ.get("SAJUN_CHAT_ID")
 
@@ -50,12 +50,21 @@ def fetch_sajun_plans():
     bgn_dt = (today - timedelta(days=3)).strftime('%Y%m%d0000')
     end_dt = today.strftime('%Y%m%d2359')
     
-    url = f"{base_url}?serviceKey={SERVICE_KEY}&pageNo=1&numOfRows=500&type=json&inqryBgnDt={bgn_dt}&inqryEndDt={end_dt}&inqryDiv=1"
+    # requests의 params 기능으로 인코딩 충돌 방지
+    params = {
+        'serviceKey': SERVICE_KEY,
+        'pageNo': '1',
+        'numOfRows': '500',
+        'type': 'json',
+        'inqryBgnDt': bgn_dt,
+        'inqryEndDt': end_dt,
+        'inqryDiv': '1'
+    }
     
     for attempt in range(3):
         try:
             print(f"API 요청 시도 {attempt + 1}/3...")
-            res = requests.get(url, timeout=60)
+            res = requests.get(base_url, params=params, timeout=60)
             print(f"HTTP 상태 코드: {res.status_code}")
             
             if res.status_code == 200:
@@ -79,6 +88,7 @@ def fetch_sajun_plans():
                 return items
             else:
                 print(f"API 오류 상태코드: {res.status_code}")
+                print(res.text[:200])
         except Exception as e:
             print(f"시도 {attempt + 1} 실패 (타임아웃 또는 통신 오류): {e}")
         
