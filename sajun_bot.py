@@ -2,7 +2,10 @@ import os
 import requests
 import json
 import time
-from datetime import datetime
+from datetime import timedelta
+    today = datetime.now()
+    bgn_dt = (today - timedelta(days=3)).strftime('%Y%m%d') # 3일 전부터
+    end_dt = today.strftime('%Y%m%d')                        # 오늘까지
 
 # ========== 설정 (사전규격 전용) ==========
 SERVICE_KEY = os.environ.get("SERVICE_KEY")
@@ -48,14 +51,14 @@ def fetch_sajun_plans():
 # today_str = datetime.now().strftime('%Y%m%d') 대신에
     target_date = "20260911" # 지난 금요일 날짜로 강제 지정
     
-    params = {
+params = {
         "serviceKey": SERVICE_KEY,
         "pageNo": "1",
         "numOfRows": "300",
         "inqryDiv": "1",
         "type": "json",
-        "inqryBgnDt": target_date,
-        "inqryEndDt": target_date
+        "inqryBgnDt": bgn_dt,
+        "inqryEndDt": end_dt
     }
     
     for attempt in range(3):
