@@ -2,10 +2,7 @@ import os
 import requests
 import json
 import time
-from datetime import timedelta
-    today = datetime.now()
-    bgn_dt = (today - timedelta(days=3)).strftime('%Y%m%d') # 3일 전부터
-    end_dt = today.strftime('%Y%m%d')                        # 오늘까지
+from datetime import datetime, timedelta
 
 # ========== 설정 (사전규격 전용) ==========
 SERVICE_KEY = os.environ.get("SERVICE_KEY")
@@ -48,10 +45,11 @@ def send_telegram(text):
 def fetch_sajun_plans():
     url = "https://apis.data.go.kr/1230000/ao/HrcspSsstndrdInfoService/getPublicPrcureThngInfoServc"
     
-# today_str = datetime.now().strftime('%Y%m%d') 대신에
-    target_date = "20260911" # 지난 금요일 날짜로 강제 지정
+    today = datetime.now()
+    bgn_dt = (today - timedelta(days=3)).strftime('%Y%m%d') # 주말 포함 최근 3일
+    end_dt = today.strftime('%Y%m%d')
     
-params = {
+    params = {
         "serviceKey": SERVICE_KEY,
         "pageNo": "1",
         "numOfRows": "300",
