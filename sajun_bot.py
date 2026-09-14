@@ -88,34 +88,37 @@ def main_once():
     new_count = 0
     
     for item in items:
-        # 사전규격 API 응답 필드명 매핑
-        title = item.get("bidNtceNm") or item.get("bfSpecRgstNoNm") or ""
-        org = item.get("orderInsttNm") or item.get("ntceInsttNm") or "기관정보 없음"
+        # 사전규격 API 응답 필드명 확인 (확장 매핑)
+        title = item.get("bidNtceNm") or item.get("bfSpecRgstNoNm") or item.get("prcurePrnmntNoNm") or ""
+        org = item.get("orderInsttNm") or item.get("ntceInsttNm") or item.get("dminsttNm") or "기관정보 없음"
         bid_no = item.get("bfSpecRgstNo") or item.get("bidNtceNo", "")
         bid_ord = item.get("bidNtceOrd", "1")
         
-        # 사전규격 전용 고유 ID 생성
+        # 디버깅용: 가져온 공고 제목과 번호 확인 (로그로 출력됨)
+        # print(f"수집된 공고: [{bid_no}] {title}")
+        
         unique_id = f"{bid_no}_{bid_ord}"
         
         if not bid_no or unique_id in sent_ids:
             continue
         
-        # 1. 기술용역 필터 (발주계획과 동일한 로직)
-        if "기술" not in title and "용역" not in title:
-            if not any(kw in title for kw in ["설계", "타당성", "계획"]):
-                continue
+        # 1. 기술용역 필터 조건 완화 (디버깅 검증용)
+        # "용역"이나 "설계", "타당성", "계획", "개발", "조성", "도시" 중 하나라도 들어가면 통과하도록 설정
+        if not any(kw in title for kw in ["용역", "설계", "타당성", "계획", "개발", "조성", "도시"]):
+            continue
         
-        # 2. 키워드 필터
+        # 2. 키워드 매칭 확인
         matched = [kw for kw in KEYWORDS if kw in title]
         if not matched:
-            continue
+            # 키워드가 정확히 안 맞더라도 일단 테스트를 위해 제목에 용역/설계가 있으면 잡히게 하려면 이 조건을 주석 처리하면 됨
+            pass
         
         # 신규 공고 알림 전송
         msg = f"""🔍 <b>신규 기술용역 사전규격 알림</b>
 
 📌 <b>{title}</b>
 🏛 발주기관: {org}
-🔍 키워드: {', '.join(matched)}"""
+🔍 키워드: {', '.join(matched) if matched else '기본 조건 통과'}"""
         
         send_telegram(msg)
         sent_ids.add(unique_id)
@@ -123,7 +126,6 @@ def main_once():
         print("→ 신규 알림 전송:", title)
         time.sleep(3)
     
-    # 기억한 목록을 파일에 다시 저장
     save_sent_ids(sent_ids)
     
     if new_count == 0:
