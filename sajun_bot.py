@@ -43,17 +43,17 @@ def send_telegram(text):
         print("텔레그램 오류:", e)
 
 def fetch_sajun_plans():
-    url = "https://apis.data.go.kr/1230000/ao/HrcspSsstndrdInfoService/getPublicPrcureThngInfoServc"
+    # 나라장터 사전규격 표준 오피셜 엔드포인트
+    url = "https://apis.data.go.kr/1230000/HrcspSsstndrdInfoService/getPublicPrcureThngInfoServc"
     
     today = datetime.now()
-    bgn_dt = (today - timedelta(days=7)).strftime('%Y%m%d') # 최근 7일 전부터
-    end_dt = today.strftime('%Y%m%d')                        # 오늘까지
+    bgn_dt = (today - timedelta(days=7)).strftime('%Y%m%d')
+    end_dt = today.strftime('%Y%m%d')
     
     params = {
         "serviceKey": SERVICE_KEY,
         "pageNo": "1",
         "numOfRows": "500",
-        "inqryDiv": "1",
         "type": "json",
         "inqryBgnDt": bgn_dt,
         "inqryEndDt": end_dt
@@ -70,16 +70,12 @@ def fetch_sajun_plans():
         data = res.json()
         response_root = data.get("response", {})
         
-        # API 서버가 보내준 결과 코드 확인
         header = response_root.get("header", {})
         result_code = header.get("resultCode")
         result_msg = header.get("resultMsg")
         print(f"API 결과 코드: {result_code} ({result_msg})")
         
-        if result_code != "00":
-            print("API 서버 에러 발생!")
-            return []
-            
+        # resultCode가 정상이거나 빈 값이어도 body가 있으면 파싱 시도
         body = response_root.get("body", {})
         items_data = body.get("items", [])
         
