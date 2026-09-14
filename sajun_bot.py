@@ -2,7 +2,7 @@ import os
 import requests
 import json
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 
 # ========== 설정 (사전규격 전용) ==========
 SERVICE_KEY = os.environ.get("SERVICE_KEY")
@@ -45,13 +45,18 @@ def send_telegram(text):
 def fetch_sajun_plans():
     url = "https://apis.data.go.kr/1230000/ao/HrcspSsstndrdInfoService/getPublicPrcureThngInfoServc"
     
-    # 발주계획과 동일하게 날짜 제한 없이 호출 (필요시 최신순 300건)
+    today = datetime.now()
+    bgn_dt = (today - timedelta(days=7)).strftime('%Y%m%d') # 최근 7일 전부터
+    end_dt = today.strftime('%Y%m%d')                        # 오늘까지
+    
     params = {
         "serviceKey": SERVICE_KEY,
         "pageNo": "1",
-        "numOfRows": "300",
+        "numOfRows": "500",
         "inqryDiv": "1",
-        "type": "json"
+        "type": "json",
+        "inqryBgnDt": bgn_dt,
+        "inqryEndDt": end_dt
     }
     
     try:
@@ -92,13 +97,13 @@ def main_once():
         bid_no = item.get("bfSpecRgstNo") or item.get("bidNtceNo", "")
         bid_ord = item.get("bidNtceOrd", "1")
         
-        # 고유 ID 생성 (발주계획 스타일과 동일한 로직 반영)
+        # 고유 ID 생성
         unique_id = f"{bid_no}_{bid_ord}"
         
         if not title or unique_id in sent_ids:
             continue
         
-        # 1. 기술용역 필터 (발주계획과 동일한 기준)
+        # 1. 기술용역 필터
         if "기술" not in title and "용역" not in title:
             if not any(kw in title for kw in ["설계", "타당성", "계획"]):
                 continue
