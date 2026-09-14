@@ -48,7 +48,7 @@ def fetch_sajun_plans():
     params = {
         "serviceKey": SERVICE_KEY,
         "pageNo": "1",
-        "numOfRows": "300",
+        "numOfRows": "30",
         "inqryDiv": "1",
         "type": "json"
     }
