@@ -105,17 +105,27 @@ def main_once():
     new_count = 0
     
     for item in items:
-        title = item.get("bidNtceNm") or item.get("bfSpecRgstNoNm") or item.get("prcurePrnmntNoNm") or ""
+        # 다양한 필드명 대응을 위해 키 확장
+        title = (
+            item.get("bidNtceNm") or 
+            item.get("bfSpecRgstNoNm") or 
+            item.get("prcurePrnmntNoNm") or 
+            item.get("ntceNm") or 
+            item.get("cnstwkNm") or 
+            ""
+        )
         org = item.get("orderInsttNm") or item.get("ntceInsttNm") or item.get("dminsttNm") or "기관정보 없음"
         bid_no = item.get("bfSpecRgstNo") or item.get("bidNtceNo", "")
         bid_ord = item.get("bidNtceOrd", "1")
         
         unique_id = f"{bid_no}_{bid_ord}"
         
-        # 디버깅용: 수집된 공고 제목 확인
+        if not title:
+            continue
+            
         print(f"체크 중: {title}")
 
-        if not title or unique_id in sent_ids:
+        if unique_id in sent_ids:
             continue
         
         # 1. 기술용역 필터
