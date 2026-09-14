@@ -5,13 +5,14 @@ import time
 from datetime import datetime, timedelta
 
 # ========== 설정 (사전규격 전용) ==========
-SERVICE_KEY = os.environ.get("SERVICE_KEY")
-TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")
-TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
+SERVICE_KEY = os.environ.get("SAJUN_SERVICE_KEY")
+TELEGRAM_TOKEN = os.environ.get("SAJUN_TELEGRAM_TOKEN")
+TELEGRAM_CHAT_ID = os.environ.get("SAJUN_CHAT_ID")
 
 KEYWORDS = ["도시", "설계", "타당성", "개발", "조성", "계획"]
 CACHE_FILE = "sent_sajun_ids.json"
 
+# 이미 보낸 공고 기록 불러오기 (기억 유지용)
 def load_sent_ids():
     if os.path.exists(CACHE_FILE):
         try:
@@ -21,6 +22,7 @@ def load_sent_ids():
             return set()
     return set()
 
+# 보낸 공고 기록 저장하기
 def save_sent_ids(sent_ids):
     try:
         with open(CACHE_FILE, "w", encoding="utf-8") as f:
@@ -44,13 +46,12 @@ def fetch_sajun_plans():
     base_url = "https://apis.data.go.kr/1230000/ao/HrcspSsstndrdInfoService/getPublicPrcureThngInfoServcPPSSrch"
     
     today = datetime.now()
-    # 서버 부하를 줄이기 위해 조회 기간을 최근 3일로 단축 (12자리 필수)
+    # 서버 부하를 줄이기 위해 최근 3일치 조회 (12자리 필수)
     bgn_dt = (today - timedelta(days=3)).strftime('%Y%m%d0000')
     end_dt = today.strftime('%Y%m%d2359')
     
     url = f"{base_url}?serviceKey={SERVICE_KEY}&pageNo=1&numOfRows=500&type=json&inqryBgnDt={bgn_dt}&inqryEndDt={end_dt}&inqryDiv=1"
     
-    # 3번까지 재시도, 대기 시간 10초로 연장
     for attempt in range(3):
         try:
             print(f"API 요청 시도 {attempt + 1}/3...")
@@ -101,19 +102,23 @@ def main_once():
         bid_no = item.get("bfSpecRgstNo") or item.get("bidNtceNo", "")
         bid_ord = item.get("bidNtceOrd", "1")
         
+        # 고유 ID 생성
         unique_id = f"{bid_no}_{bid_ord}"
         
         if not title or unique_id in sent_ids:
             continue
         
+        # 1. 기술용역 필터
         if "기술" not in title and "용역" not in title:
             if not any(kw in title for kw in ["설계", "타당성", "계획"]):
                 continue
         
+        # 2. 키워드 필터
         matched = [kw for kw in KEYWORDS if kw in title]
         if not matched:
             continue
         
+        # 신규 공고 알림 전송
         msg = f"""🔍 <b>신규 기술용역 사전규격 알림</b>
 
 📌 <b>{title}</b>
@@ -126,6 +131,7 @@ def main_once():
         print("→ 신규 알림 전송:", title)
         time.sleep(3)
     
+    # 기억한 목록을 파일에 다시 저장
     save_sent_ids(sent_ids)
     
     if new_count == 0:
