@@ -2,7 +2,7 @@ import os
 import requests
 import json
 import time
-from datetime import datetime, timedelta
+from datetime import datetime
 
 # ========== 설정 (사전규격 전용) ==========
 SERVICE_KEY = os.environ.get("SERVICE_KEY")
@@ -45,46 +45,37 @@ def send_telegram(text):
 def fetch_sajun_plans():
     url = "https://apis.data.go.kr/1230000/ao/HrcspSsstndrdInfoService/getPublicPrcureThngInfoServc"
     
-    today = datetime.now()
-    bgn_dt = (today - timedelta(days=3)).strftime('%Y%m%d') # 주말 포함 최근 3일
-    end_dt = today.strftime('%Y%m%d')
-    
+    # 발주계획과 동일하게 날짜 제한 없이 호출 (필요시 최신순 300건)
     params = {
         "serviceKey": SERVICE_KEY,
         "pageNo": "1",
         "numOfRows": "300",
         "inqryDiv": "1",
-        "type": "json",
-        "inqryBgnDt": bgn_dt,
-        "inqryEndDt": end_dt
+        "type": "json"
     }
     
-    for attempt in range(3):
-        try:
-            print(f"API 요청 시도 {attempt + 1}/3...")
-            res = requests.get(url, params=params, timeout=60)
-            if res.status_code == 200:
-                data = res.json()
-                body = data.get("response", {}).get("body", {})
-                items_data = body.get("items", [])
-                
-                if isinstance(items_data, dict):
-                    items = items_data.get("item", [])
-                else:
-                    items = items_data
-                    
-                if not isinstance(items, list):
-                    items = [items] if items else []
-                    
-                return items
-            else:
-                print(f"API 오류 상태코드: {res.status_code}")
-        except Exception as e:
-            print(f"시도 {attempt + 1} 실패: {e}")
-        time.sleep(5)
+    try:
+        res = requests.get(url, params=params, timeout=30)
+        if res.status_code != 200:
+            print("API 오류 상태코드:", res.status_code)
+            return []
+            
+        data = res.json()
+        body = data.get("response", {}).get("body", {})
+        items_data = body.get("items", [])
         
-    print("API 서버 응답 없음 (타임아웃 지속 발생)")
-    return []
+        if isinstance(items_data, dict):
+            items = items_data.get("item", [])
+        else:
+            items = items_data
+            
+        if not isinstance(items, list):
+            items = [items] if items else []
+            
+        return items
+    except Exception as e:
+        print("API 호출 오류:", e)
+        return []
 
 def main_once():
     print(f"\n[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] 실시간 사전규격 확인 중...")
@@ -101,12 +92,13 @@ def main_once():
         bid_no = item.get("bfSpecRgstNo") or item.get("bidNtceNo", "")
         bid_ord = item.get("bidNtceOrd", "1")
         
+        # 고유 ID 생성 (발주계획 스타일과 동일한 로직 반영)
         unique_id = f"{bid_no}_{bid_ord}"
         
-        if not bid_no or unique_id in sent_ids:
+        if not title or unique_id in sent_ids:
             continue
         
-        # 1. 기술용역 필터
+        # 1. 기술용역 필터 (발주계획과 동일한 기준)
         if "기술" not in title and "용역" not in title:
             if not any(kw in title for kw in ["설계", "타당성", "계획"]):
                 continue
@@ -129,6 +121,7 @@ def main_once():
         print("→ 신규 알림 전송:", title)
         time.sleep(3)
     
+    # 기억한 목록을 파일에 다시 저장
     save_sent_ids(sent_ids)
     
     if new_count == 0:
