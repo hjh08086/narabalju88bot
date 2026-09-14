@@ -6,8 +6,8 @@ from datetime import datetime, timedelta
 
 # ========== 설정 (사전규격 전용) ==========
 SERVICE_KEY = os.environ.get("SERVICE_KEY")
-TELEGRAM_TOKEN = os.environ.get("SAJUN_TELEGRAM_TOKEN")
-TELEGRAM_CHAT_ID = os.environ.get("SAJUN_CHAT_ID")
+TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")
+TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
 
 KEYWORDS = ["도시", "설계", "타당성", "개발", "조성", "계획"]
 CACHE_FILE = "sent_sajun_ids.json"
@@ -102,36 +102,29 @@ def main_once():
     items = fetch_sajun_plans()
     print(f"최종 파싱된 공고 건수: {len(items)}")
     
-    # ★ API가 보내주는 실제 데이터 구조(키값들) 확인용 디버그
-    if items:
-        print("--- [디버그] 첫 번째 공고의 실제 API 필드 키목록 ---")
-        print(list(items[0].keys()))
-        print("--- [디버그] 첫 번째 공고의 실제 데이터 내용 ---")
-        print(items[0])
-        print("--------------------------------------------------")
-    
     new_count = 0
     
     for item in items:
+        # 실제 공고명/제목이 담긴 필드 우선순위 반영
         title = (
+            item.get("prdctClsfcNoNm") or 
             item.get("bidNtceNm") or 
             item.get("bfSpecRgstNoNm") or 
             item.get("prcurePrnmntNoNm") or 
             item.get("ntceNm") or 
             item.get("cnstwkNm") or 
-            item.get("refNoNm") or 
             ""
         )
         
-        if not title and item:
-            title = str(list(item.values())[0])
-
-        org = item.get("orderInsttNm") or item.get("ntceInsttNm") or item.get("dminsttNm") or "기관정보 없음"
+        org = item.get("rlDminsttNm") or item.get("orderInsttNm") or item.get("ntceInsttNm") or "기관정보 없음"
         bid_no = item.get("bfSpecRgstNo") or item.get("bidNtceNo", "")
         bid_ord = item.get("bidNtceOrd", "1")
         
         unique_id = f"{bid_no}_{bid_ord}"
         
+        if not title:
+            continue
+            
         print(f"체크 중: {title}")
 
         if unique_id in sent_ids:
