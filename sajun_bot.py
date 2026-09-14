@@ -43,7 +43,6 @@ def send_telegram(text):
         print("텔레그램 오류:", e)
 
 def fetch_sajun_plans():
-    # 발주계획처럼 PPSSrch가 붙는 정확한 오피셜 나라장터 검색 엔드포인트 적용
     base_url = "https://apis.data.go.kr/1230000/ao/HrcspSsstndrdInfoService/getPublicPrcureThngInfoServcPPSSrch"
     
     today = datetime.now()
@@ -63,6 +62,11 @@ def fetch_sajun_plans():
                 response_root = data.get("response", {})
                 
                 body = response_root.get("body", {})
+                
+                # 서버가 반환한 전체 통계 정보 출력
+                total_count = body.get("totalCount", "정보 없음")
+                print(f"API 응답 전체 검색 건수(totalCount): {total_count}")
+                
                 items_data = body.get("items", [])
                 
                 if isinstance(items_data, dict):
@@ -89,7 +93,7 @@ def main_once():
     
     sent_ids = load_sent_ids()
     items = fetch_sajun_plans()
-    print(f"조회된 전체 건수: {len(items)}")
+    print(f"최종 파싱된 공고 건수: {len(items)}")
     
     new_count = 0
     
