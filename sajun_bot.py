@@ -45,20 +45,22 @@ def send_telegram(text):
 def fetch_sajun_plans():
     url = "https://apis.data.go.kr/1230000/ao/HrcspSsstndrdInfoService/getPublicPrcureThngInfoServc"
     
+    today_str = datetime.now().strftime('%Y%m%d')
+    
     params = {
         "serviceKey": SERVICE_KEY,
         "pageNo": "1",
-        "numOfRows": "30",
+        "numOfRows": "300",
         "inqryDiv": "1",
-        "type": "json"
+        "type": "json",
+        "inqryBgnDt": today_str,
+        "inqryEndDt": today_str
     }
     
-    # 서버 응답 지연/타임아웃 방지를 위한 최대 3회 자동 재시도 로직
     for attempt in range(3):
         try:
             print(f"API 요청 시도 {attempt + 1}/3...")
             res = requests.get(url, params=params, timeout=60)
-            
             if res.status_code == 200:
                 data = res.json()
                 body = data.get("response", {}).get("body", {})
@@ -76,11 +78,9 @@ def fetch_sajun_plans():
             else:
                 print(f"API 오류 상태코드: {res.status_code}")
         except Exception as e:
-            print(f"시도 {attempt + 1} 실패 (타임아웃/연결 오류): {e}")
-            
-        if attempt < 2:
-            time.sleep(5) # 5초 대기 후 재시도
-            
+            print(f"시도 {attempt + 1} 실패: {e}")
+        time.sleep(5)
+        
     print("API 서버 응답 없음 (타임아웃 지속 발생)")
     return []
 
