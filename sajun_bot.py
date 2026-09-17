@@ -132,7 +132,7 @@ def main_once():
         
         # 1. 기술용역 필터
         if "기술" not in title and "용역" not in title:
-            if not any(kw in title for kw in ["설계", "타당성", "계획"]):
+            if not any(kw in title for kw in KEYWORDS):
                 continue
         
         # 2. 키워드 필터
