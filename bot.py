@@ -2,15 +2,18 @@ import os
 import requests
 import json
 import time
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 
-# ========== 설정 ==========
+# ========== 설정 (발주계획 전용) ==========
 SERVICE_KEY = os.environ.get("SERVICE_KEY")
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
 
-KEYWORDS = ["도시", "설계", "타당성", "개발", "조성", "계획"]
+KEYWORDS = ["도시", "설계", "타당성", "개발", "조성", "산단", "계획"]
 CACHE_FILE = "sent_ids.json"
+
+# 한국 시간(KST, UTC+9) 정의
+KST = timezone(timedelta(hours=9))
 
 # 이미 보낸 공고 기록 불러오기 (기억 유지용)
 def load_sent_ids():
@@ -72,7 +75,8 @@ def fetch_order_plans():
         return []
 
 def main_once():
-    print(f"\n[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] 실시간 발주계획 확인 중...")
+    # 한국 시간(KST) 기준 로그 출력
+    print(f"\n[{datetime.now(KST).strftime('%Y-%m-%d %H:%M:%S')}] 실시간 발주계획 확인 중...")
     
     sent_ids = load_sent_ids()
     items = fetch_order_plans()
@@ -124,9 +128,9 @@ def main_once():
     save_sent_ids(sent_ids)
     
     if new_count == 0:
-        print("새로운 공고 없음 (정상 대기 중)")
+        print("새로운 발주계획 공고 없음 (정상 완료)")
     else:
-        print(f"신규 알림 {new_count}건 전송 완료")
+        print(f"신규 발주계획 알림 {new_count}건 전송 완료")
 
 if __name__ == "__main__":
     main_once()
