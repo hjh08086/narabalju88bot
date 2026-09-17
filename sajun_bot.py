@@ -169,13 +169,4 @@ def main_once():
         print(f"신규 사전규격 알림 {new_count}건 전송 완료")
 
 if __name__ == "__main__":
-    print("🚀 나라장터 사전규격 실시간 감시 봇 시작!")
-    while True:
-        try:
-            main_once()
-        except Exception as e:
-            print(f"실행 중 에러 발생: {e}")
-        
-        # 10분(600초)마다 반복 실행 (원하시면 시간 조절 가능)
-        print("\n[대기 중] 10분 뒤에 다시 확인합니다...\n")
-        time.sleep(600)
+    main_once()
