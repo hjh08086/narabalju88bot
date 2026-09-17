@@ -2,7 +2,7 @@ import os
 import requests
 import json
 import time
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 # ========== 설정 (사전규격 전용) ==========
 SERVICE_KEY = os.environ.get("SERVICE_KEY")
@@ -11,6 +11,9 @@ TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
 
 KEYWORDS = ["도시", "설계", "타당성", "개발", "조성", "계획"]
 CACHE_FILE = "sent_sajun_ids.json"
+
+# 한국 시간(KST, UTC+9) 정의
+KST = timezone(timedelta(hours=9))
 
 # 이미 보낸 공고 기록 불러오기 (기억 유지용)
 def load_sent_ids():
@@ -45,7 +48,8 @@ def send_telegram(text):
 def fetch_sajun_plans():
     base_url = "https://apis.data.go.kr/1230000/ao/HrcspSsstndrdInfoService/getPublicPrcureThngInfoServcPPSSrch"
     
-    today = datetime.now()
+    # 한국 시간 기준 현재 시각 적용
+    today = datetime.now(KST)
     bgn_dt = (today - timedelta(days=2)).strftime('%Y%m%d0000') # 최근 2일 집중 조회
     end_dt = today.strftime('%Y%m%d%H%M')
     
@@ -93,7 +97,6 @@ def fetch_sajun_plans():
                     break
                 page_no += 1
             
-            # [수정됨] 페이징이 완전히 끝난 후 결과 반환 (들여쓰기 교정 완료)
             print(f"API 수집 완료: 총 {len(all_items)}개 공고 확인")
             return all_items
             
@@ -104,7 +107,8 @@ def fetch_sajun_plans():
     return []
 
 def main_once():
-    print(f"\n[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] 실시간 사전규격 확인 중...")
+    # 한국 시간 기준 로그 출력
+    print(f"\n[{datetime.now(KST).strftime('%Y-%m-%d %H:%M:%S')}] 실시간 사전규격 확인 중...")
     
     sent_ids = load_sent_ids()
     items = fetch_sajun_plans()
@@ -169,4 +173,5 @@ def main_once():
         print(f"신규 사전규격 알림 {new_count}건 전송 완료")
 
 if __name__ == "__main__":
+    # GitHub Actions에서 한 번만 깔끔하게 실행되도록 단발성 구조 유지
     main_once()
