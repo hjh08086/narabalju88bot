@@ -46,53 +46,59 @@ def fetch_sajun_plans():
     base_url = "https://apis.data.go.kr/1230000/ao/HrcspSsstndrdInfoService/getPublicPrcureThngInfoServcPPSSrch"
     
     today = datetime.now()
-    bgn_dt = (today - timedelta(days=3)).strftime('%Y%m%d0000')
+    bgn_dt = (today - timedelta(days=2)).strftime('%Y%m%d0000') # 조회 기간을 2일로 좁혀서 최신 집중 조회
     end_dt = today.strftime('%Y%m%d%H%M')
     
-    params = {
-        'serviceKey': SERVICE_KEY,
-        'pageNo': '1',
-        'numOfRows': '500',
-        'type': 'json',
-        'inqryBgnDt': bgn_dt,
-        'inqryEndDt': end_dt,
-        'inqryDiv': '1'
-    }
+    all_items = []
+    page_no = 1
+    num_of_rows = 100  # 한 번에 100개씩 페이지별로 안전하게 호출
     
     for attempt in range(3):
         try:
-            print(f"API 요청 시도 {attempt + 1}/3...")
-            res = requests.get(base_url, params=params, timeout=60)
-            print(f"HTTP 상태 코드: {res.status_code}")
-            
-            if res.status_code == 200:
-                data = res.json()
-                response_root = data.get("response", {})
-                body = response_root.get("body", {})
+            while True:
+                params = {
+                    'serviceKey': SERVICE_KEY,
+                    'pageNo': str(page_no),
+                    'numOfRows': str(num_of_rows),
+                    'type': 'json',
+                    'inqryBgnDt': bgn_dt,
+                    'inqryEndDt': end_dt,
+                    'inqryDiv': '1'
+                }
                 
-                total_count = body.get("totalCount")
-                print(f"API 응답 전체 검색 건수(totalCount): {total_count}")
+                res = requests.get(base_url, params=params, timeout=30)
+                if res.status_code != 200:
+                    break
+                    
+                data = res.json()
+                body = data.get("response", {}).get("body", {})
+                total_count = body.get("totalCount", 0)
                 
                 items_data = body.get("items", [])
-                
                 if isinstance(items_data, dict):
                     items = items_data.get("item", [])
                 else:
                     items = items_data
-                    
                 if not isinstance(items, list):
                     items = [items] if items else []
                     
-                return items
-            else:
-                print(f"API 오류 상태코드: {res.status_code}")
-                print(res.text[:200])
+                if not items:
+                    break
+                    
+                all_items.extend(items)
+                
+                # 가져온 개수가 total_count에 도달했거나 더 이상 없으면 중단
+                if len(all_items) >= total_count or len(items) < num_of_rows:
+                    break
+                page_no += 1
+                
+            print(f"API 수집 완료: 총 {len(all_items)}개 공고 확인")
+            return all_items
+            
         except Exception as e:
-            print(f"시도 {attempt + 1} 실패 (타임아웃 또는 통신 오류): {e}")
-        
-        time.sleep(10)
-        
-    print("API 서버 응답 없음 (연속 타임아웃 발생)")
+            print(f"통신 오류 발생: {e}")
+            time.sleep(5)
+            
     return []
 
 def main_once():
