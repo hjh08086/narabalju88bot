@@ -107,6 +107,7 @@ def main_once():
     for item in items:
         # 실제 공고명/제목이 담긴 필드 우선순위 반영
         title = (
+            item.get("bfSpecNm") or
             item.get("prdctClsfcNoNm") or 
             item.get("bidNtceNm") or 
             item.get("bfSpecRgstNoNm") or 
