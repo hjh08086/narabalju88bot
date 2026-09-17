@@ -47,7 +47,7 @@ def fetch_sajun_plans():
     
     today = datetime.now()
     bgn_dt = (today - timedelta(days=3)).strftime('%Y%m%d0000')
-    end_dt = today.strftime('%Y%m%d2359')
+    end_dt = today.strftime('%Y%m%d%H%M')
     
     params = {
         'serviceKey': SERVICE_KEY,
