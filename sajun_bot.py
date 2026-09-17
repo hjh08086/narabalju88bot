@@ -46,12 +46,12 @@ def fetch_sajun_plans():
     base_url = "https://apis.data.go.kr/1230000/ao/HrcspSsstndrdInfoService/getPublicPrcureThngInfoServcPPSSrch"
     
     today = datetime.now()
-    bgn_dt = (today - timedelta(days=2)).strftime('%Y%m%d0000') # 조회 기간을 2일로 좁혀서 최신 집중 조회
+    bgn_dt = (today - timedelta(days=2)).strftime('%Y%m%d0000') # 최근 2일 집중 조회
     end_dt = today.strftime('%Y%m%d%H%M')
     
     all_items = []
     page_no = 1
-    num_of_rows = 100  # 한 번에 100개씩 페이지별로 안전하게 호출
+    num_of_rows = 100  # 한 번에 100개씩 페이지별 호출
     
     for attempt in range(3):
         try:
@@ -68,6 +68,7 @@ def fetch_sajun_plans():
                 
                 res = requests.get(base_url, params=params, timeout=30)
                 if res.status_code != 200:
+                    print(f"API 오류 상태코드: {res.status_code}")
                     break
                     
                 data = res.json()
@@ -87,16 +88,17 @@ def fetch_sajun_plans():
                     
                 all_items.extend(items)
                 
-                # 가져온 개수가 total_count에 도달했거나 더 이상 없으면 중단
+                # 가져온 개수가 전체 개수(totalCount)에 도달했거나 더 이상 없으면 반복 탈출
                 if len(all_items) >= total_count or len(items) < num_of_rows:
                     break
                 page_no += 1
-                
+            
+            # [수정됨] 페이징이 완전히 끝난 후 결과 반환 (들여쓰기 교정 완료)
             print(f"API 수집 완료: 총 {len(all_items)}개 공고 확인")
             return all_items
             
         except Exception as e:
-            print(f"통신 오류 발생: {e}")
+            print(f"통신 오류 발생 (시도 {attempt + 1}/3): {e}")
             time.sleep(5)
             
     return []
@@ -132,8 +134,6 @@ def main_once():
         if not title:
             continue
             
-        print(f"체크 중: {title}")
-
         if unique_id in sent_ids:
             continue
         
@@ -145,7 +145,6 @@ def main_once():
         # 2. 키워드 필터
         matched = [kw for kw in KEYWORDS if kw in title]
         if not matched:
-            print(" → 키워드 불일치로 제외됨")
             continue
             
         print(f" → 조건 일치! 알림 대상: {title}")
@@ -170,4 +169,13 @@ def main_once():
         print(f"신규 사전규격 알림 {new_count}건 전송 완료")
 
 if __name__ == "__main__":
-    main_once()
+    print("🚀 나라장터 사전규격 실시간 감시 봇 시작!")
+    while True:
+        try:
+            main_once()
+        except Exception as e:
+            print(f"실행 중 에러 발생: {e}")
+        
+        # 10분(600초)마다 반복 실행 (원하시면 시간 조절 가능)
+        print("\n[대기 중] 10분 뒤에 다시 확인합니다...\n")
+        time.sleep(600)
