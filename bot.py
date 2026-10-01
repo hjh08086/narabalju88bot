@@ -134,3 +134,4 @@ def main_once():
 
 if __name__ == "__main__":
     main_once()
+# 봇 활성화 체크 (스케줄러 갱신)
