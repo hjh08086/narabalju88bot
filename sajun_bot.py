@@ -175,3 +175,4 @@ def main_once():
 if __name__ == "__main__":
     # GitHub Actions에서 한 번만 깔끔하게 실행되도록 단발성 구조 유지
     main_once()
+# 봇 활성화 체크 (스케줄러 갱신)
