@@ -2,7 +2,7 @@ name: Narajangteo Bot
 
 on:
   schedule:
-    - cron: '*/15 * * * *'  # 15분마다 실행
+    - cron: '*/30 * * * *'  # 30분마다 실행
   workflow_dispatch:
 
 jobs:
