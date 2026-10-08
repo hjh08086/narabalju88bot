@@ -48,9 +48,9 @@ def send_telegram(text):
 def fetch_order_plans():
     url = "https://apis.data.go.kr/1230000/ao/OrderPlanSttusService/getOrderPlanSttusListServcPPSSrch"
     
-    # 한국 시간 기준 오늘 자정부터 현재까지의 기간 설정 추가
+    # 💡 수정: 어제 자정부터 현재까지 조회 (1일 전 범위)
     today = datetime.now(KST)
-    bgn_dt = today.strftime('%Y%m%d0000')  # 오늘 자정 시작
+    bgn_dt = (today - timedelta(days=1)).strftime('%Y%m%d0000')  # 어제 자정 시작
     end_dt = today.strftime('%Y%m%d%H%M')  # 현재 시간
     
     params = {
@@ -58,8 +58,8 @@ def fetch_order_plans():
         "pageNo": "1",
         "numOfRows": "300",
         "inqryDiv": "1",
-        "inqryBgnDt": bgn_dt,  # 조회 시작일 추가
-        "inqryEndDt": end_dt,  # 조회 종료일 추가
+        "inqryBgnDt": bgn_dt,  # 조회 시작일 (1일 전)
+        "inqryEndDt": end_dt,  # 조회 종료일 (현재)
         "type": "json"
     }
     
@@ -141,4 +141,3 @@ def main_once():
 
 if __name__ == "__main__":
     main_once()
-# 봇 활성화 체크 (스케줄러 갱신)
